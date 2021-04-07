@@ -1,0 +1,48 @@
+version : '3'
+services :
+    app :
+        image : 'docker-billingpayment-service:latest'
+        build :
+            context : .
+        container_name : app
+        depends_on :
+            - db
+        environment :
+            - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/compose-postgres
+            - SPRING_DATASOURCE_USERNAME=postgres
+            - SPRING_DATASOURCE_PASSWORD=1234
+            - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    db :
+        image : postgres
+        container_name : orders-db
+        environment :
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=1234
+                
+        healthcheck :
+            test : pg_isready -U postgres
+            interval : 1m
+            timeout : 10s
+            retries : 2
+    zookeeper :
+        image : wurstmeister/zookeeper
+        container_name: zookeeper
+        expose :
+            - "2181"
+    kafka :
+        image : wurstmeister/kafka
+        ports :
+            - "9092:9092"
+        expose :
+            - "9095"
+        environment :
+            KAFKA_ADVERTISED_HOST_NAME: localhost
+            KAFKA_ZOOKEEPER_CONNECT : zookeeper:2181
+            KAFKA_CREATE_TOPIC: "batch_orders:1:3"
+        depends_on :
+            - zookeeper
+        volumes :
+            - ./:/etc/kafka
+
+
+
